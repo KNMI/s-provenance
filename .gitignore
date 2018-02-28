@@ -2,3 +2,15 @@
 *.svn-base
 
 provenance-api/src/prov-services/helper.py
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+*.html
+
+*.html
+
+resources/s-prov-doc/objectproperties/hasInPort___-126694058.html
+=======
+>>>>>>> aspinuso/master
+=======
+>>>>>>> aspinuso/master
