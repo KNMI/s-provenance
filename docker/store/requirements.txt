@@ -1,0 +1,7 @@
+flask
+twisted
+gunicorn
+pymongo
+python-dateutil
+lxml
+rdflib

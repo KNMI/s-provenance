@@ -2,7 +2,7 @@
 delete Ext.tip.Tip.prototype.minWidth;
 
 
-iDROP='http://iren-web.renci.org/idrop-release/idrop.jnlp'   
+iDROP='http://iren-web.renci.org/idrop-release/idrop.jnlp'
 RADIAL='d3js.jsp?minidx=0&maxidx=10&level=prospective&groupby=actedOnBehalfOf'	      	                    
 PROV_SERVICE_BASEURL="/j2ep-1.0/prov/"
 var IRODS_URL = "http://dir-irods.epcc.ed.ac.uk/irodsweb/rodsproxy/"+userSN+".UEDINZone@dir-irods.epcc.ed.ac.uk:1247/UEDINZone"
@@ -14,6 +14,8 @@ var activityStore = Ext.create('CF.store.Activity');
 
 var artifactStore = Ext.create('CF.store.Artifact');
 
+var termStore =Ext.create('CF.store.TermStore');
+
 var singleArtifactStore = Ext.create('CF.store.Artifact');
 
 var workflowStore = Ext.create('CF.store.ProvWorkflow');
@@ -24,59 +26,65 @@ var seismoMetaStore = Ext.create('CF.store.SeismoMeta');
 
 var mimetypesStore = Ext.create('CF.store.Mimetype');
 
+var modeStore = Ext.create('CF.store.ModeStore');
+
 // specifies the userhome of whom we are going to access the data from (for sharing purposes)
 owner = userSN
 var dn_regex=/file:\/\/?([\w-]|([\da-z\.-]+)\.([a-z\.]{2,6}))+/
 
 // ComboBox with multiple selection enabled
 Ext.define('CF.view.metaCombo', {
-  extend: 'Ext.form.field.ComboBox',
-  alias: 'widget.metacombo',
-  fieldLabel: 'Terms',
-  name: 'keys',
-  displayField: 'term',
-  width: 200,
-  inputAttrTpl: " data-qtip='Insert here a sequence of Terms divided by commas.<br/> Eg. magnitude,station' ",
-  labelWidth: 40,
-  labelAlign: 'right',
-  margin: '10 10 30 10',
-  colspan: 4,
-  multiSelect: true,
-  store: seismoMetaStore,
-  queryMode: 'local',
-  getInnerTpl: function() {
-    return '<div data-qtip="{term}">{term}</div>';
-  },
-  initComponent: function() {
-    this.callParent();
-  },
-  onCollapse: function() {
-    this.callParent();
-    if (this.picker.getSelectionModel().selection == null || this.picker.getSelectionModel().selection.length === 0) {
-      this.value = this.getRawValue();
-    }
-  }
+ 
+extend: 'Ext.form.field.ComboBox',
+alias: 'widget.metacombo',
+fieldLabel: 'Terms',
+name: 'terms',
+ 
+width: 250,
+inputAttrTpl: " data-qtip='Insert here a sequence of Terms divided by commas.<br/> Eg. magnitude,station' ",
+labelWidth: 40,
+abelAlign: 'right',
+ 
+ 
+queryMode: 'local',
+tpl: Ext.create('Ext.XTemplate',
+ 
+                          '<tpl for=".">',
+ 
+                              '<div class="x-boundlist-item" style="border-bottom:1px solid #f0f0f0;">',
+                               '<div><b>Term:</b> {term}</div>',
+                              '<div><b>Use:</b> {use}</div>',
+                              '<div><b>Type:</b> {type}</div></div>',
+                          '</tpl>'
+                      ),
+displayTpl: Ext.create('Ext.XTemplate',
+                          '<tpl for=".">',
+                              '{term}',
+                          '</tpl>'
+                      ),
+
+forceSelection: false,
+valueField: 'id',
+displayField: 'term',
+autoLoad: false,
+store: termStore
+
 });
 
-// Ext.override(Ext.selection.RowModel, {
-//   isRowSelected: function(record, index) {
-//     try {
-//       return this.isSelected(record);
-//     } catch (e) {
-//       return false;
-//     }
-//   }
-// });
 
+ 
+ 
 
 function openRun(id)
-{		if (id) 
-		 	this.currentRun=id
+{   if (id) 
+      this.currentRun=id
         activityStore.setProxy({
           type: 'ajax',
-          url: PROV_SERVICE_BASEURL + 'activities/' + encodeURIComponent(currentRun)+'?method=aggregate',
+          url: PROV_SERVICE_BASEURL + '/workflowexecutions/'+encodeURIComponent(currentRun)+'/showactivity',
+          
+
           reader: {
-            rootProperty: 'activities',
+            rootProperty: '@graph',
             totalProperty: 'totalCount'
           },
           simpleSortMode: true
@@ -96,15 +104,36 @@ Ext.define('CF.view.mimeCombo', {
   extend: 'Ext.form.field.ComboBox',
   alias: 'widget.mimecombo',
   fieldLabel: 'mime-type',
-  name: 'mime-type',
+  name: 'format',
   displayField: 'mime',
   width: 300,
-  labelWidth: 130,
-  colspan: 4,
+  labelWidth: 90,
+   
   store: mimetypesStore,
   queryMode: 'local',
   getInnerTpl: function() {
     return '<div data-qtip="{mime}">{mime} {desc}</div>';
+  },
+  initComponent: function() {
+    this.callParent();
+  }
+});
+
+
+Ext.define('CF.view.modeCombo', {
+  extend: 'Ext.form.field.ComboBox',
+  alias: 'widget.modecombo',
+  fieldLabel: 'mode',
+  name: 'mode',
+  displayField: 'mode',
+  width: 100,
+  labelWidth: 30,
+  value:"OR",
+  store: modeStore,
+  queryMode: 'local',
+  inputAttrTpl: " data-qtip='Select AND or OR to indicate if the runs must match all the terms of the query or at least one<br/> Eg. magnitude,station' ",
+  getInnerTpl: function() {
+    return '<div data-qtip="{AND, OR}">{mode}</div>';
   },
   initComponent: function() {
     this.callParent();
@@ -117,7 +146,7 @@ var currentRun
 
 var deriv_run
 
-var level = 1;
+var level = 2;
 
 var colour = {
   orange: "#EEB211",
@@ -157,62 +186,70 @@ var wasDerivedFromDephtree = function(data, graph, parent) {
 
   }
   
-  if (data.streams)
+  if (data['s-prov:Data'])
   { 
  
+
    
-  if (data.streams[0].port==null && !(data.streams[0].port===undefined))
+  if (data['s-prov:Data'].port==null && !(data['s-prov:Data'].port===undefined))
   {
    edgecol=colour.lightblue
    col = colour.lightblue
   }
-  
-  if (!(data.feedbackIteration===undefined) && data.feedbackIteration)
+   
+  if (data['s-prov:Data']["prov:wasGeneratedBy"] && !(data['s-prov:Data']["prov:wasGeneratedBy"].feedbackIteration===undefined) && data['s-prov:Data']["prov:wasGeneratedBy"].feedbackIteration)
   {
    edgecol=colour.lightblue
    col = colour.red
   }
+
+
  
-  	if (data.streams[0].port=='_d4p_state')
-  	{     //console.log(data.streams[0].port)
-  		col = colour.lightblue
-  		
- 	 }
- 	 
- 	 
+    if (data['s-prov:Data'].port=='_d4p_state')
+    { //console.log(data['s-prov:Data'].port)
+      col = colour.lightblue
+      
+   }
+   
+   
   }
-  //var node = graph.addNode(data["id"],{label:data["_id"].substring(0,5),'color':col, 'shape':'dot', 'radius':19,'alpha':1,mass:2})
-  //node.runId=data["runId"]
-  //_d4p_state
+ 
   
- // if (!data.streams.port or data.streams.port=='')
   
  
-  var nodea = graph.addNode(data["id"], {
-    label: data["_id"].substring(0, 8),
+  var nodea = graph.addNode(data['s-prov:Data']["@id"], {
+    label: data['s-prov:Data']["prov:wasAttributedTo"]["@id"].substring(0, 8),
     'color': col,
     'shape': 'dot',
     'radius': 19,
     'alpha': 1,
-    'data': {'runId':data.runId,'location':data.streams[0].location},
+    'data': {'runId':data['s-prov:Data']["prov:wasGeneratedBy"]["s-prov:WFExecution"]["@id"],'location':data['s-prov:Data']['prov:location']},
     mass: 2
   });
 
   if (parent) {
     
   var edgecolour
+  // check uncertainties tag
+  if (data["up:assertionType"] && (data["up:assertionType"]=="up:Incomplete"))
+  {
+   console.log(data["up:assertionType"])
+   edgecol=colour.lightgrey
+    
+  }
+  else
     if(nodea.data.data.runId!=parent.data.data.runId)
-	{    	 
-			deriv_run=nodea.data.data.runId
-    		edgecolour=colour.red
-    		 
-    		
+  {      
+      deriv_run=nodea.data.data.runId
+        edgecolour=colour.red
+         
+        
     }
     else
-	{     
-			deriv_run=nodea.data.data.runId
-			edgecolour=colour.darkblue
-    		 
+  {     
+      deriv_run=nodea.data.data.runId
+      edgecolour=colour.darkblue
+         
     }
     //console.log(parent.data.data.runId)
     graph.addEdge(parent, nodea, {
@@ -224,10 +261,10 @@ var wasDerivedFromDephtree = function(data, graph, parent) {
 
   }
 
-  if (data["derivationIds"].length > 0 && typeof data["derivationIds"] != "undefined") {
-    for (var i = 0; i < data["derivationIds"].length; i++) {
-      if (data["derivationIds"][i]["wasDerivedFrom"]) {
-        wasDerivedFromDephtree(data["derivationIds"][i]["wasDerivedFrom"], graph, nodea);
+  if (data['s-prov:Data']["prov:Derivation"].length > 0 && typeof data['s-prov:Data']["prov:Derivation"] != "undefined") {
+    for (var i = 0; i < data['s-prov:Data']["prov:Derivation"].length; i++) {
+      if (data['s-prov:Data']["prov:Derivation"][i]["s-prov:Data"]) {
+        wasDerivedFromDephtree(data["s-prov:Data"]["prov:Derivation"][i], graph, nodea);
       }
     }
   }
@@ -237,8 +274,8 @@ var wasDerivedFromDephtree = function(data, graph, parent) {
 
 var derivedDataDephtree = function(data, graph, parent) {
   var col = colour.darkblue;
-   
-   if (!parent) {
+  
+  if (!parent) {
     //col = colour.red
 
   }
@@ -272,17 +309,17 @@ var derivedDataDephtree = function(data, graph, parent) {
 
   if (parent) {
    if(nodea.data.data.runId!=parent.data.data.runId)
-	{    	 
-			deriv_run=nodea.data.data.runId
-    		edgecolour=colour.red
-    		 
-    		
+  {      
+      deriv_run=nodea.data.data.runId
+      edgecolour=colour.red
+         
+        
     }
     else
-	{     
-			deriv_run=nodea.data.data.runId
-			edgecolour=colour.purple
-    		 
+  {   
+      deriv_run=nodea.data.data.runId
+      edgecolour=colour.purple
+         
     }
     graph.addEdge(parent, nodea, {
       length: 0.75,
@@ -298,20 +335,22 @@ var derivedDataDephtree = function(data, graph, parent) {
         if (i < 20)
           derivedDataDephtree(data["derivedData"][i], graph, nodea)
         else {
-          var nodeb = graph.addNode(data["derivedData"][i], {
+           
+          var nodeb = graph.addNode(data["derivedData"][i]["dataId"], {
             label: "...too many",
             'color': colour.purple,
             'shape': 'dot',
             'radius': 19,
             'alpha': 1,
+            'data': {'runId':data.runId,'location':""},
             mass: 2
           })
 
 
-          graph.addEdge(nodeb, nodea,{
+          graph.addEdge(nodea, nodeb,{
             length: 0.75,
             directed: true,
-            weight: 2
+            weight: 4
           })
           break
         }
@@ -326,7 +365,7 @@ var getMetadata = function(data, graph) {
 graph.addEdge(node.name,data["streams"][0]["id"],{label:"wasDerivedBy"})*/
   if (data["entities"][0]["location"] != "") {
     var loc = data["entities"][0]["location"].replace(/file:\/\/[\w-]+[\w.\/]+[\w\/]+pub/, "/intermediate/")
-      //	loc=loc.replace(//,"")
+      //  loc=loc.replace(//,"")
 
     var params = graph.addNode(data["entities"][0]["id"] + "loc", {
       label: JSON.stringify(data["entities"][0]["location"]),
@@ -343,7 +382,7 @@ graph.addEdge(node.name,data["streams"][0]["id"],{label:"wasDerivedBy"})*/
 
 var wasDerivedFromAddBranch = function(url) {
   $.getJSON(url, function(data) {
-  	//console.log(data)
+    //console.log(data)
     wasDerivedFromDephtree(data, sys, null)
   });
 }
@@ -360,12 +399,12 @@ var wasDerivedFromNewGraph = function(url) {
   graphMode = "WASDERIVEDFROM"
 
   sys.prune();
-  wasDerivedFromAddBranch(url)
+  wasDerivedFromAddBranch(url+"?level="+$("#navlevel").val())
 };
 
 var derivedDataNewGraph = function(url) {
   sys.prune();
-  derivedDataAddBranch(url)
+  derivedDataAddBranch(url+"?level="+$("#navlevel").val())
 };
 
 var addMeta = function(url) {
@@ -441,12 +480,14 @@ Ext.define('CF.view.WorkflowOpenByRunID', {
       var form = this.up('form').getForm();
 
       if (form.isValid()) {
-		
+    
         activityStore.setProxy({
           type: 'ajax',
-          url: PROV_SERVICE_BASEURL + 'activities/' + encodeURIComponent(form.findField("runId").getValue(false).trim())+'?method=aggregate',
+          // OLD API => url: PROV_SERVICE_BASEURL + 'activities/' + encodeURIComponent(form.findField("runId").getValue(false).trim())+'?method=aggregate',
+          url: PROV_SERVICE_BASEURL + '/workflowexecutions/'+encodeURIComponent(form.findField("runId").getValue(false).trim())+'/showactivity',
+          
           reader: {
-            rootProperty: 'activities',
+            rootProperty: 'runIds',
             totalProperty: 'totalCount'
           },
           simpleSortMode: true
@@ -508,7 +549,11 @@ Ext.define('CF.view.WorkflowValuesRangeSearch', {
 
       combineErrors: true,
       msgTarget: 'under',
-
+      
+      layout: {
+        type: 'table',
+        columns:3
+      },
       items: [{
           xtype: 'metacombo'
         }, {
@@ -516,7 +561,7 @@ Ext.define('CF.view.WorkflowValuesRangeSearch', {
           fieldLabel: 'Min values',
           name: 'minvalues',
           anchor: '80%',
-          allowBlank: false,
+          allowBlank: true,
           labelAlign: 'right',
           inputAttrTpl: " data-qtip='Insert here a sequence of min values related to the indicated Terms, divided by commas.<br/> Eg. 3.5,AQU' ",
           margin: '10 0 10 0'
@@ -527,9 +572,17 @@ Ext.define('CF.view.WorkflowValuesRangeSearch', {
           name: 'maxvalues',
           inputAttrTpl: " data-qtip='Insert here a sequence of max values related to the indicated Terms, divided by commas.<br/> Eg. 5,AQU' ",
           anchor: '80%',
-          allowBlank: false,
+          allowBlank: true,
           margin: '10 0 10 0'
-        }
+        },
+        {
+          xtype: 'modecombo',
+          margin: '10 0 10 10'
+        },
+        {
+           xtype: 'mimecombo',
+           allowBlank: true
+       },
 
       ]
     }]
@@ -539,7 +592,7 @@ Ext.define('CF.view.WorkflowValuesRangeSearch', {
     text: 'Refresh',
     handler: function() {
       this.up('form').getForm().reset();
-      workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflow/user/' + userSN;
+      workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflowexecutions?usernames=' + userSN;
       workflowStore.load();
     }
   }, {
@@ -548,13 +601,21 @@ Ext.define('CF.view.WorkflowValuesRangeSearch', {
 
     handler: function() {
       var form = this.up('form').getForm();
-      var keys = form.findField("keys").getValue(false).trim();
+      
+      var terms = form.findField("terms").getRawValue(false).trim();
+      var mode = form.findField("mode").getValue(false).trim();
+      var format = form.findField("format").getValue(false);
       var minvalues = encodeURIComponent(form.findField("minvalues").getValue(false).trim());
       var maxvalues = encodeURIComponent(form.findField("maxvalues").getValue(false).trim());
       owner = userSN;
 
       if (form.isValid()) {
-        workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflow/user/' + userSN + '?keys=' + keys + "&maxvalues=" + maxvalues + "&minvalues=" + minvalues;
+        workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflowexecutions?usernames=' + userSN +
+                                                                  "&terms=" + terms + 
+                                                                  "&maxvalues=" + maxvalues + 
+                                                                  "&minvalues=" + minvalues +
+                                                                  "&mode=" + mode +
+                                                                  "&formats=" + format;
       };
 
       //BUG: with a single load the grid doesn't synchronise when scrolled to the bottom
@@ -572,7 +633,7 @@ Ext.define('CF.view.WorkFlowSelectionWindow', {
   requires: ['CF.view.WorkflowSelection'],
   title: 'Workflows Runs',
   height: 530,
-  width: 850,
+  width: 1000,
   closeAction: 'hide',
   layout: {
     type: 'vbox',
@@ -602,40 +663,46 @@ Ext.define('CF.view.WorkFlowSelectionWindow', {
 var onStoreLoad = function(store) {
   Ext.getCmp('viewworkflowinput').enable()
   Ext.getCmp('exportrun').enable();;
-  Ext.getCmp("activitymonitor").setTitle(userSN+' - Run activity monitor - ' + currentRun)
+  Ext.getCmp("activitymonitor").setTitle(userSN+' - Runtime Instances monitor - ' + currentRun)
 }
 
-var renderActivityID = function(value, p, record) {
-if (record.data.streams)
-   for (i=0;i<=record.data.streams.length;i++)
-   {
-   		
-	if(record.data.streams[i]['con:immediateAccess'] && record.data.streams[i]['con:immediateAccess']!="")
-	   	return Ext.String.format(
-    		"<strong><i>{0}</i></strong>",
-    		record.data.ID
-  	   	);
-  	if(record.data.streams[i].location && record.data.streams[i].location!='')
-    	return Ext.String.format(
-    		"<i>{0}</i>",
-    		record.data.ID
-  	   	);
-  	return Ext.String.format(
-    	"{0}",
-    	record.data.ID
-  	   );
-  	
-  	}
-else  	
-  	return Ext.String.format(
-    	"{0}",
-    	record.data.ID
-  	   );
+var renderInstanceID = function(value, p, record) {
+ 
+if (record.data['s-prov:generatedWithImmediteAccess'])
+    return Ext.String.format(
+        "<strong><i>{0}</i></strong>",
+        record.data["@id"]
+        );
+if (record.data["s-prov:generatedWithLocation"])
+    return Ext.String.format(
+        "<i>{0}</i>",
+        record.data["@id"]
+        )
+
+return Ext.String.format(
+      "{0}",
+      record.data["@id"]
+       );
 }
-  	
+
+var renderChanged = function(value, p, record) {
+ 
+if (record.data['s-prov:qualifiedChange'] && record.data['s-prov:qualifiedChange'].length>0)
+    return Ext.String.format(
+        "<strong style='color:red'>{0}</strong>",
+        record.data['s-prov:qualifiedChange'].length
+        );
+return Ext.String.format(
+      "{0}",
+      ""
+       );
+}
+
+
+    
 
 Ext.define('CF.view.ActivityMonitor', {
-  title: 'Run Activity monitor',
+  title: 'Runtime Instances monitor',
   width: '30%',
   region: 'west',
   extend: 'Ext.grid.Panel',
@@ -666,7 +733,7 @@ Ext.define('CF.view.ActivityMonitor', {
         this.workflowselectionwindow.show();
 
         if (!workflowStore.isLoaded()) {
-          workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflow/user/' + userSN;
+          workflowStore.getProxy().api.read = PROV_SERVICE_BASEURL + 'workflowexecutions?usernames=' + userSN;
 
           workflowStore.load();
         }
@@ -686,7 +753,7 @@ Ext.define('CF.view.ActivityMonitor', {
       handler: function() {
         workflowInputStore.setProxy({
           type: 'ajax',
-          url: PROV_SERVICE_BASEURL + 'workflow/' + encodeURIComponent(currentRun),
+          url: PROV_SERVICE_BASEURL + 'workflowexecutions/' + encodeURIComponent(currentRun),
           reader: {
             rootProperty: 'input',
             totalProperty: 'totalCount'
@@ -722,17 +789,17 @@ Ext.define('CF.view.ActivityMonitor', {
         tooltip: "Export the trace in a W3C-PROV JSON file",
         text: 'Get W3C-PROV',
         disabled: 'true',
-  	    id: 'exportrun',
+        id: 'exportrun',
 
         handler: function() {
-         window.open(PROV_SERVICE_BASEURL + 'workflow/export/' + encodeURIComponent(currentRun)+'?'+'all=True', 'Download')
+         window.open(PROV_SERVICE_BASEURL + 'workflowexecutions/'+encodeURIComponent(currentRun)+'/export?'+'all=True', 'Download')
           
-     	}
+      }
     },
     {
         tooltip: "Manage Files and Permissions with iDROP",
         text: 'iDrop',
-  	    id: 'idrop',
+        id: 'idrop',
         handler: function() {
          window.open(iDROP, 'Download')
           
@@ -741,7 +808,7 @@ Ext.define('CF.view.ActivityMonitor', {
       {
         tooltip: "Radial Provenance Analysis",
         text: 'Radial',
-  	    id: 'Radial',
+        id: 'Radial',
         handler: function() {
          window.open(RADIAL+'&runId='+currentRun,'_blank')
           
@@ -777,23 +844,45 @@ Ext.define('CF.view.ActivityMonitor', {
       header: 'ID',
       dataIndex: 'ID',
       flex: 3,
-      sortable: true,
-      renderer: renderActivityID
+      sortable: false,
+      renderer: renderInstanceID
     },
 
     {
-      header: 'Date',
-      dataIndex: 'creationDate',
+      header: 'Last Event',
+      dataIndex: 'lastEventTime',
       flex: 3,
       sortable: true,
       groupable: false
     }, // custom mapping
     {
-      header: 'Messages',
-      dataIndex: 'errors',
+      header: 'Data count',
+      dataIndex: 'count',
+      flex: 3,
+      sortable: true,
+      groupable: false
+    },
+    {
+      header: 'worker',
+      dataIndex: 'worker',
+      flex: 3,
+      sortable: true,
+      groupable: false
+    },
+    {
+      header: 'Message',
+      dataIndex: 'message',
       flex: 3,
       sortable: false
+    },
+    {
+      header: 'Changed',
+      dataIndex: 'change',
+      flex: 3,
+      sortable: false,
+      renderer: renderChanged
     }
+
   ],
   flex: 1,
 
@@ -802,10 +891,11 @@ Ext.define('CF.view.ActivityMonitor', {
       itemdblclick: function(dataview, record, item, index, e) {
         artifactStore.setProxy({
           type: 'ajax',
-          url: PROV_SERVICE_BASEURL + 'entities/generatedby?iterationId=' + record.get("ID"),
+          url: PROV_SERVICE_BASEURL + 'data?wasAttributedTo=' + record.get("ID") +
+                                           '&wasGeneratedBy=' + currentRun ,
 
           reader: {
-            rootProperty: 'entities',
+            rootProperty: '@graph',
             totalProperty: 'totalCount'
           }
         });
@@ -906,6 +996,9 @@ Ext.define('CF.view.StreamValuesRangeSearch', {
     allowBlank: true
   }, {
     xtype: 'mimecombo'
+  },
+  {
+    xtype: 'modecombo'
   }],
 
   buttons: [{
@@ -914,18 +1007,31 @@ Ext.define('CF.view.StreamValuesRangeSearch', {
 
     handler: function() {
       var form = this.up('form').getForm();
-      var keys = this.up('form').getForm().findField("keys").getValue(false);
+      var terms = form.findField("terms").getRawValue(false).trim();
       var minvalues = encodeURIComponent(this.up('form').getForm().findField("minvalues").getValue(false));
       var maxvalues = encodeURIComponent(this.up('form').getForm().findField("maxvalues").getValue(false));
-      var mimetype = this.up('form').getForm().findField("mime-type").getValue(false);
-      if (keys == null) keys = "";
-      if (form.isValid()) {
+      var mimetype = this.up('form').getForm().findField("format").getValue(false);
+      var mode = form.findField("mode").getValue(false).trim();
+      
+      
+      qerystring=""
+      if (terms!="" && maxvalues!="" && minvalues!="" && terms!=null)
+          qerystring="&terms=" + terms + 
+                     "&maxvalues=" + maxvalues + 
+                     "&minvalues=" + minvalues 
+       
+      if (mimetype!=null && mimetype!="") 
+         qerystring=qerystring+"&format=" + mimetype
+      
+       if (form.isValid()) {
         artifactStore.setProxy({
           type: 'ajax',
-          url: PROV_SERVICE_BASEURL + 'entities/values-range?runId=' + currentRun + "&keys=" + keys + "&maxvalues=" + maxvalues + "&minvalues=" + minvalues + "&mime-type=" + mimetype,
+          url: PROV_SERVICE_BASEURL + 'data?wasGeneratedBy=' + currentRun + 
+                                      qerystring+          
+                                      "&mode="+mode,
 
           reader: {
-            rootProperty: 'entities',
+            rootProperty: '@graph',
             totalProperty: 'totalCount'
           },
 
@@ -1000,7 +1106,7 @@ Ext.define('CF.view.FilterOnAncestor', {
         FilterAjax.request({
 
           method: 'POST',
-          url: PROV_SERVICE_BASEURL + 'entities/filterOnAncestorsMeta',
+          url: PROV_SERVICE_BASEURL + 'data/filterOnAncestorsMeta',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
@@ -1085,7 +1191,7 @@ Ext.define('CF.view.FilterOnAncestorValuesRange', {
       if (form.isValid()) {
         FilterAjax.request({
           method: 'POST',
-          url: PROV_SERVICE_BASEURL + 'entities/filterOnAncestorsValuesRange',
+          url: PROV_SERVICE_BASEURL + 'data/filterOnAncestors',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
@@ -1093,7 +1199,7 @@ Ext.define('CF.view.FilterOnAncestorValuesRange', {
             filtered = Ext.decode(response.responseText)
             artifactStore.clearFilter(true);
             if (filtered.length == 0)
-              {console.log(filtered)
+              {//console.log(filtered)
               artifactStore.removeAll()}
             else {
               artifactStore.filterBy(function(record, id) {
@@ -1110,7 +1216,7 @@ Ext.define('CF.view.FilterOnAncestorValuesRange', {
           },
           params: {
             ids: dataids,
-            keys: form.findField("keys").getValue().trim(),
+            terms: form.findField("terms").getRawValue(false).trim(),
             minvalues: form.findField("minvalues").getValue().trim(),
             maxvalues: form.findField("maxvalues").getValue().trim()
           }
@@ -1238,15 +1344,14 @@ Ext.define('CF.view.AnnotationSearch', {
 
 var searchartifactspane = Ext.create('Ext.window.Window', {
   title: 'Search Data',
-  height: 230,
+  height: 300,
   width: 500,
   layout: 'fit',
   closeAction: 'hide',
   items: [{
     xtype: 'tabpanel',
     items: [
-      Ext.create('CF.view.StreamValuesRangeSearch'),
-      Ext.create('CF.view.AnnotationSearch')
+      Ext.create('CF.view.StreamValuesRangeSearch')
     ]
   }]
 });
@@ -1254,7 +1359,7 @@ var searchartifactspane = Ext.create('Ext.window.Window', {
 
 var insertusername = Ext.create('Ext.window.Window', {
   title: 'Search Data',
-  height: 230,
+  height: 500,
   width: 500,
   layout: 'fit',
   closeAction: 'hide',
@@ -1276,7 +1381,7 @@ var filterOnAncestorspane = Ext.create('Ext.window.Window', {
   items: [{
     xtype: 'tabpanel',
     items: [
-      Ext.create('CF.view.FilterOnMeta'),
+      //Ext.create('CF.view.FilterOnMeta'),
       Ext.create('CF.view.FilterOnAncestorValuesRange')
     ]
   }]
@@ -1285,13 +1390,15 @@ var filterOnAncestorspane = Ext.create('Ext.window.Window', {
 
 
 var renderStream = function(value, p, record) {
+  
   var location = "</br>"
   var contenthtm = ""
-  var prov='<a href=\"'+PROV_SERVICE_BASEURL + 'workflow/export/data/'+record.data.ID+'?all=true\" target=\"_blank">Download Provenance</a><br/>'
+  var prov='<a href=\"'+PROV_SERVICE_BASEURL + '/data/'+record.data.ID+'/export?all=true\" target=\"_blank">Download Provenance</a><br/>'
 
   if (record.data.location != "") {
     location = '<a href="javascript:viewData(\'' + record.data.location + '\'.split(\',\'),true)">Open</a><br/>'
   }
+
 
   contentvis = JSON.parse(record.data.content)
 
@@ -1304,12 +1411,13 @@ var renderStream = function(value, p, record) {
     }
   }
 
+  console.log(contenthtm)
   return Ext.String.format(
     '<div class="search-item" style="border:2px solid; box-shadow: 10px 10px 5px #888888;"><br/>' +
     '<strong>Data ID: {0} </strong> <br/> <br/></strong><hr/>' +
     '<strong>Lineage:</strong><br/><br/>' +
-    '<strong><a href="javascript:wasDerivedFromNewGraph(\'' + PROV_SERVICE_BASEURL + 'wasDerivedFrom/{0}?level=' + level + '\')">Trace Backwards</a><br/><br/></strong>' +
-    '<strong><a href="javascript:derivedDataNewGraph(\'' + PROV_SERVICE_BASEURL + 'derivedData/{0}?level=' + level + '\')">Trace Forward</a><br/><br/></strong>' +
+    '<strong><a href="javascript:wasDerivedFromNewGraph(\'' + PROV_SERVICE_BASEURL + 'wasDerivedFrom/{0}\')">Trace Backwards</a><br/><br/></strong>' +
+    '<strong><a href="javascript:derivedDataNewGraph(\'' + PROV_SERVICE_BASEURL + 'derivedData/{0}\')">Trace Forward</a><br/><br/></strong>' +
     '<strong>{10}</strong><br/><hr/><br/>' +
     '<strong>Generated By :</strong> {1} <br/> <br/>' +
     '<strong>Run Id :</strong> {6} <br/> <br/>' +
@@ -1331,9 +1439,9 @@ var renderStream = function(value, p, record) {
     record.data.runId,
     record.data.endTime,
     record.data.errors,
-  	record.data.port,
-  	prov,
-  	record.data.startTime
+    record.data.port,
+    prov,
+    record.data.startTime
   );
 };
 
@@ -1342,13 +1450,13 @@ var renderStreamSingle = function(value, p, record) {
    
   if (record.data.location != "")
     location = '<a href="javascript:viewData(\'' + record.data.location + '\'.split(\',\'),true)">Open</a><br/>'
-
+  console.log(record.data)
   return Ext.String.format(
     '<div class="search-item" style="border:2px solid; box-shadow: 10px 10px 5px #888888;"><br/>' +
     '<strong>Data ID: {0} </strong> <br/> <br/></strong><hr/>' +
     '<strong>Lineage:</strong><br/><br/>' +
-    '<strong><a href="javascript:wasDerivedFromNewGraph(\'' + PROV_SERVICE_BASEURL + 'wasDerivedFrom/{0}?level=' + level + '\')">Trace Backwards</a><br/><br/></strong>' +
-    '<strong><a href="javascript:derivedDataNewGraph(\'' + PROV_SERVICE_BASEURL + 'derivedData/{0}?level=' + level + '\')">Trace Forward</a><br/><br/><hr/></strong>' +
+    '<strong><a href="javascript:wasDerivedFromNewGraph(\'' + PROV_SERVICE_BASEURL + 'wasDerivedFrom/{0}\')">Trace Backwards</a><br/><br/></strong>' +
+    '<strong><a href="javascript:derivedDataNewGraph(\'' + PROV_SERVICE_BASEURL + 'derivedData/{0}\)">Trace Forward</a><br/><br/><hr/></strong>' +
     '<strong>Generated By :</strong> {1} <br/> <br/>' +
     '<strong>Run Id :</strong> {6} <br/> <br/>' +
     '<strong>Start Time Iteration :</strong>{10}<br/> <br/>' +
@@ -1379,12 +1487,12 @@ var renderWorkflowInput = function(value, p, record) {
  
  if (record.data.provtype=='wfrun' || record.data.type=='wfrun')
  {  
- 	 wfid=record.data.url.substr(record.data.url.lastIndexOf('/') + 1)
- 	 if (wfid.indexOf('?')!=-1)
-	 	 wfid=wfid.substr(0,wfid.indexOf('?'))
- 	 
+   wfid=record.data.url.substr(record.data.url.lastIndexOf('/') + 1)
+   if (wfid.indexOf('?')!=-1)
+     wfid=wfid.substr(0,wfid.indexOf('?'))
+   
     
-	  return Ext.String.format(
+    return Ext.String.format(
     '<br/><strong>Workflow: </strong>{0} - <a href="javascript:openRun(\'{3}\')">{3}</a><br/><br/>' +
     '<strong><a href="{1}" target="_blank">Get W3C-PROV Document</a><br/><br/>' +
     '<strong><a href="javascript: openRun(\'{4}\')">Refresh Current</a><br/>',
@@ -1542,22 +1650,22 @@ Ext.define('CF.view.ArtifactView', {
             htmlcontent += "globus-url-copy -cred $X509_USER_PROXY " + location.replace(dn_regex, IRODS_URL_GSI + "~/verce/"+currentRun+"/") + " ./ <br/>";
           }
         });
-		
+    
         if (this.window == null) {
-        	
+          
           this.window = Ext.create('Ext.window.Window', {
             title: 'Download Script',
             height: 360,
             width: 800,
             
             listeners:{
-            	scope:this,
-       		 	close:function(){
-            	this.window = null
-              	  
-               	 
-            	}
-        	},
+              scope:this,
+            close:function(){
+              this.window = null
+                  
+                 
+              }
+          },
             layout: {
               type: 'vbox',
               align: 'stretch',
@@ -1579,6 +1687,8 @@ Ext.define('CF.view.ArtifactView', {
     }]
   }
 });
+
+
 
 Ext.define('CF.view.provenanceGraphsViewer', {
   extend: 'Ext.panel.Panel',
@@ -1606,19 +1716,21 @@ Ext.define('CF.view.provenanceGraphsViewer', {
     region: 'center',
 
     xtype: 'panel',
-    html: '<strong>Double Click on the border nodes to expand. Right Click to see the content</strong>'+
+    html: '<strong>Double Click on the border data-nodes to expand. Right Click on each data-node to access its info</strong><br/>'+
+          '<strong>Navigation steps</strong><input id="navlevel" type="text" value=1 size=3 />'+
           '<div class="my-legend">'+
-		  '<div class="legend-title"></div>'+
-		  '<div class="legend-scale">'+
+      '<div class="legend-title"></div>'+
+      '<div class="legend-scale">'+
           '<ul class="legend-labels">'+
-    	  '<li><span style="background:'+colour.darkblue+'"></span>trace-bw</li>'+
-    	  '<li><span style="background:'+colour.purple+'"></span>trace-fw</li>'+
-    	  //'<li><span style="background:'+colour.red+'"></span>expanded</li>'+
-     	  '<li><span style="background:'+colour.lightblue+'"></span>stateful</li>'+
-   		  '<li><span style="background:'+colour.red+'"></span>cross-run</li>'+
-   		  '<li><span style="background:'+colour.orange+'"></span>file</li>'+
-   		  '</ul></div></div>'+
-		  '<center> <div style="width:100%" height="700"><canvas id="viewportprov" width="1200" height="500"></canvas></div></center>'
+        '<li><span style="background:'+colour.darkblue+'"></span>trace-bw</li>'+
+        '<li><span style="background:'+colour.purple+'"></span>trace-fw</li>'+
+        //'<li><span style="background:'+colour.red+'"></span>expanded</li>'+
+        '<li><span style="background:'+colour.lightblue+'"></span>stateful</li>'+
+        '<li><span style="background:'+colour.red+'"></span>cross-run</li>'+
+        '<li><span style="background:'+colour.orange+'"></span>file</li>'+
+        '<li><span style="background:'+colour.lightgrey+'"></span>Incomplete</li>'+
+        '</ul></div></div><br/><center>'+
+        '<div style="width:100%" height="700"><canvas id="viewportprov" width="1200" height="500"></canvas></div></center>'
   }],
 
   listeners: {
@@ -1639,9 +1751,9 @@ Ext.define('CF.view.provenanceGraphsViewer', {
           //   addMeta('/j2ep-1.0/prov/streamchunk/?runid='+currentRun+'&id='+selected.node.name)
           singleArtifactStore.setProxy({
             type: 'ajax',
-            url: PROV_SERVICE_BASEURL + 'entities/'+selected.node.name,
+            url: PROV_SERVICE_BASEURL + 'data/'+selected.node.name,
             reader: {
-              rootProperty: 'entities',
+              rootProperty: '@graph',
               totalProperty: 'totalCount'
             }
           });
@@ -1666,7 +1778,7 @@ Ext.define('CF.view.provenanceGraphsViewer', {
 
           singleArtifactStore.data.clear();
           singleArtifactStore.load();
-          window.event.returnValue = false;
+          //window.event.returnValue = false;
         }
       });
 
@@ -1682,11 +1794,11 @@ Ext.define('CF.view.provenanceGraphsViewer', {
           // dragged.node.tempMass = 10000
           dragged.node.fixed = true;
           if (graphMode == "WASDERIVEDFROM") {
-            wasDerivedFromAddBranch(PROV_SERVICE_BASEURL + 'wasDerivedFrom/' + selected.node.name + "?level=" + level)
+            wasDerivedFromAddBranch(PROV_SERVICE_BASEURL + 'wasDerivedFrom/' + selected.node.name + "?level=" + $("#navlevel").val())
           }
 
           if (graphMode == "DERIVEDDATA") {
-            derivedDataAddBranch(PROV_SERVICE_BASEURL + 'derivedData/' + selected.node.name + "?level=" + level)
+            derivedDataAddBranch(PROV_SERVICE_BASEURL + 'derivedData/' + selected.node.name + "?level=" + $("#navlevel").val())
           }
         }
         return false;

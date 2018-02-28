@@ -424,7 +424,7 @@ function packageHierarchyPE(classes,gb) {
     //console.log(root) 
   	node.parent= map[d.name[gb]]
     node.parent.children.push(node)
-    node.key=d.name.run.substring(0,45)
+    node.key=d.name.runId.substring(0,45)
     
    
  });
@@ -538,7 +538,7 @@ function packageConnlistPEs(nodes) {
 
   // Compute a map from name to node.
   nodes.forEach(function(d) {
-    map[d.name.run] = d;
+    map[d.name.runId] = d;
   });
 
   // For each import, construct a link from the source to target node.
@@ -549,7 +549,7 @@ function packageConnlistPEs(nodes) {
     
       if (map[i]!=undefined){
       	  //console.log(map[d.name.run].name.run+" "+map[i])
-	      connlist.push({source: map[d.name.run], target: map[i]});
+	      connlist.push({source: map[d.name.runId], target: map[i]});
 	      }
     });
   });

@@ -1,5 +1,0 @@
-flask
-twisted
-gunicorn
-pymongo
-python-dateutil
