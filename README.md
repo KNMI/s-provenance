@@ -9,26 +9,26 @@ Provenance framework for storage and access of data-intensive streaming lineage.
 
 #### The API
 
-S-ProvFlow system exposes a RESTful web API which offers high-level services on top of the storage backend. The API methods are classified in provenance acquisition, monitoring, data discovery and traceability, comprehensive-summaries, and provenance export. This is the service layer on top of which all the above visualisation and exploration tools are built. The API support the OpenAPI specs via the automatically generated [swagger.yaml](https://github.com/aspinuso/s-provenance/blob/master/provenance-api/resources/swagger.yaml) 
+S-ProvFlow system exposes a RESTful web API which offers high-level services on top of the storage backend. The API methods are classified in provenance acquisition, monitoring, data discovery and traceability, comprehensive-summaries, and provenance export. This is the service layer on top of which all the above visualisation and exploration tools are built. The API support the OpenAPI specs via the automatically generated [swagger.yaml](https://github.com/KNMI/s-provenance/blob/master/provenance-api/resources/swagger.yaml) 
 
 The API returns information in JSON and JSON-LD, which includes PROV and S-PROV semantics and references to external controlled vocabularies for the domain metadata describng the data entities and the agents participating in their production. It allows clients to selectively export provenance traces in PROV-XML and RDF for a single data results, as well as for the entire computation.
 
-![alt tag](https://raw.githubusercontent.com/aspinuso/s-provenance/master/resources/sprovflowpnf.png)
+![alt tag](https://raw.githubusercontent.com/KNMI/s-provenance/master/resources/sprovflowpnf.png)
 
 #### Monitoring and Validation Visualiser (MVV)
 
 The S-ProvFlow system offers a visual tool (Monitoring and Validation Visualiser- MVV) that allows different sorts of operations through the interactive access and manipulation of the provenance information. These include monitoring of the progress of the execution with runtime indication on the production of data and the occurrence of errors, dependency navigation, data discovery, data preview, download and selective staging.
 
-![alt tag](https://raw.githubusercontent.com/aspinuso/s-provenance/master/resources/totalv.png)
+![alt tag](https://raw.githubusercontent.com/KNMI/s-provenance/master/resources/totalv.png)
 
 #### The Bulk Dependencies Visualiser (BDV)
 
 The BVD produces comprehensive views for a single execution of a scientific data-intensive task or involving many runs and users. It exploits an approach to visual-analytics of the information captured that combines radial diagrams, selective grouping and Edge Bundles technique. Views of the provenance repository are generated interactively for multiple levels of granularity and for different kinds of expertise and roles. It offers facilities to tune and organise the views. 
 
-![alt tag](https://raw.githubusercontent.com/aspinuso/s-provenance/master/resources/bdv_combined_1_lscape1.png)
+![alt tag](https://raw.githubusercontent.com/KNMI/s-provenance/master/resources/bdv_combined_1_lscape1.png)
 We consider two classes of usage, respectively addressing details of a single computational tasks (above) or the interaction between user and their methods (below), according to configurable metadata properties and values-ranges.
 
-![alt tag](https://raw.githubusercontent.com/aspinuso/s-provenance/master/resources/radial_duo.png)
+![alt tag](https://raw.githubusercontent.com/KNMI/s-provenance/master/resources/radial_duo.png)
 
 #### Supporting Projects
 
