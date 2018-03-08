@@ -1257,57 +1257,20 @@ class ProvenanceStore(object):
         
     
     
-    def filterOnAncestorsValuesRange(self,idlist,keylist,minvaluelist,maxvaluelist):
+    def filterOnAncestorsValuesRange(self,idlist,keylist,minvaluelist,maxvaluelist,level=100,mode='OR'):
         filteredIds=[]
         for x in idlist:
-            test=self.hasAncestorWithValuesRange(x,keylist,minvaluelist,maxvaluelist)
-         
-            if test!=None and test["hasAncestorWith"]==True:
+
+            test=self.hasAncestorWith_new(x,level,keylist,minvaluelist,maxvaluelist,mode=mode)
+             
+            if test!=None and test==True:
                 filteredIds.append(x)
         
         return filteredIds
     
-    def filterOnAncestorsMeta(self,idlist,keylist,valuelist):
-        filteredIds=[]
-        for x in idlist:
-            test=self.hasAncestorWith(x,keylist,valuelist)
-         
-            if test["hasAncestorWith"]==True:
-                filteredIds.append(x)
-        
-        return filteredIds
+     
     
-    def filterOnMeta(self,idlist,keylist,valuelist):
-        filteredIds=[]
-        for x in idlist:
-            test=self.hasMeta(x,keylist,valuelist)
-        
-            if test["hasMeta"]==True:
-                filteredIds.append(x)
-        
-        return filteredIds
-            
-    
-    def hasMeta(self, id, keylist,valuelist):
-         
-        elementsDict ={}
-        
-        k=0
-        for x in keylist:
-            val=valuelist[k]
-            k+=1
-            val =helper.num(val)
-            
-            elementsDict.update({x:val})
-        
-        xx = self.lineage.find_one({"streams":{"$elemMatch":{"id":id,'content':{'$elemMatch':elementsDict}}}},{"streams.id":1});
-        if (xx!=None):    
-            
-            return {"hasMeta":True}
-                    
-                  
-        else:
-            return {"hasMeta":False}
+   
     
                 
     def hasAncestorWithValuesRange(self, id, keylist,minvaluelist,maxvaluelist):
@@ -2586,9 +2549,8 @@ class ProvenanceStore(object):
                 'value': merged_value
             }
 
-    def hasAncestorWith_new(self, streamId, maxDepth, keylist, maxvalues, minvalues, setContained = False):
-        db = self.connection["verce-prov"]
-        lineage = db['lineage']
+    def hasAncestorWith_new(self, streamId, maxDepth, keylist, minvalues, maxvalues, setContained = False,mode="OR"):
+         
 
         start_node = self.lineage.find_one({
                 'streams.id': streamId
@@ -2599,9 +2561,10 @@ class ProvenanceStore(object):
                 'runId': 1
             })
 
-        (key_value_pairs, contains_range_operator) = helper.getKeyValuePairs(keylist, maxvalues, minvalues) 
+        key_value_pairs = helper.getKeyValuePairs(keylist, maxvalues, minvalues) 
         indexed_meta_query = helper.getAndQueryList(key_value_pairs)
-        print('--->', start_node)
+        #print(indexed_meta_query)
+        #print('--start-node->', start_node)
 
         # TODO use endTime or startTime
 
@@ -2615,14 +2578,15 @@ class ProvenanceStore(object):
                 '$or': helper.getIndexedMetaQueryList(key_value_pairs),
                 'runId': start_node['runId']
             }
-            # print('--- min_possible_match_query----->', min_possible_match_query)
+            print('--- min_possible_match_query----->', min_possible_match_query)
             min_possible_match_cursor = self.lineage.find(min_possible_match_query).sort("startTime",direction=1).limit(1)
 
             min_possible_match = None
             for i in min_possible_match_cursor:
                 min_possible_match = i
-            # print('---min_possible_match -->', min_possible_match)
+            print('---min_possible_match -->', min_possible_match)
             if min_possible_match == None:
+                print('---return false -->', )
                 return False
             else: 
                 min_date = min_possible_match['startTime']
@@ -2634,8 +2598,14 @@ class ProvenanceStore(object):
                     derivationIds.append(derivationId['DerivedFromDatasetID'])
 
         depth = 1;
+        #print('depth : ', depth, derivationIds, maxDepth,mode)
+        if mode=="OR":
+            mode="$or"
+        else:
+            mode="$and"
         while len(derivationIds) > 0 and maxDepth > 0:
-            print('depth : ', depth, derivationIds, maxDepth)
+
+            
             depth += 1 
             ancestor_match_query = {
                 'streams': {
@@ -2643,12 +2613,13 @@ class ProvenanceStore(object):
                         'id': {
                             '$in': derivationIds
                         },
-                        '$or': indexed_meta_query
+                        mode: indexed_meta_query
                     }
                 }
             }
-
+            #print('depth : ', depth, derivationIds, maxDepth,ancestor_match_query)
             ancestor_match = self.lineage.find_one(ancestor_match_query, { '_id': 1 })
+            #print('result : ', ancestor_match)
 
             if ancestor_match is not None: 
                 return True
@@ -2674,7 +2645,7 @@ class ProvenanceStore(object):
             for lineage_item in lineage_cursor:
                 if 'derivationIds' in lineage_item:
                     for derivationId in lineage_item['derivationIds']:
-                        if 'DerivedFromDatasetID' in derivationId:
+                        if 'DerivedFromDatasetID' in derivationId and derivationId['DerivedFromDatasetID']!=None:
                             derivationIds.append(derivationId['DerivedFromDatasetID'])
             
             maxDepth -= 1
