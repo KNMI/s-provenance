@@ -329,8 +329,13 @@ def toW3Cprov(ling,bundl,format='xml',mode="run"):
                         
                         if 'prov:type' in y:
                              
-                            cla=g._namespaces[y['prov:type'].split(':')[0]]
-                            e1._attributes[prov['type']].add(cla[y['prov:type'].split(':')[1]])
+                            try:
+                                cla=g._namespaces[y['prov:type'].split(':')[0]]
+                                e1._attributes[prov['type']].add(cla[y['prov:type'].split(':')[1]])
+                            except:
+
+                                e1._attributes[prov['type']].add(var['prov:type'])
+
                             #print(e1._attributes)
                          
                         bundle.hadMember(knmi["Data_"+x["id"]], e1)
@@ -445,7 +450,7 @@ class ProvenanceStore(object):
             
             if keylist==None:
                 print "Filter Query: "+str(searchDic)
-                obj = self.lineage.find(searchDic,{"runId":1,"streams":1,"parameters":1,'startTime':1,'endTime':1,'errors':1,'derivationIds':1,'iterationId':1}).sort("endTime",direction=-1)[start:start+limit]
+                obj = self.lineage.find(searchDic,{"runId":1,"streams":1,"parameters":1,'startTime':1,'endTime':1,'errors':1,'derivationIds':1,'iterationId':1,'prov_cluster':1}).sort("endTime",direction=-1)[start:start+limit]
                 totalCount = self.lineage.count(searchDic)
                 #self.lineage.count(searchDic)
                 return (obj,totalCount)
@@ -1399,23 +1404,24 @@ class ProvenanceStore(object):
         start=dateutil.parser.parse(kwargs['mintime']) if 'mintime' in kwargs and kwargs['mintime']!='null' else None
         maxtime=dateutil.parser.parse(kwargs['maxtime']) if 'maxtime' in kwargs and kwargs['maxtime']!='null' else None
         matchdic=clean_empty(matchdic)
-         
+        
         if 'level' in kwargs and kwargs['level']=='prospective':
             if start!=None:
                 matchdic.update({'startTime':{'$gt':str(start)}})
             obj=self.lineage.aggregate(pipeline=[{'$match':matchdic},{'$unwind': "$streams"},{'$group':{'_id':{'actedOnBehalfOf':'$actedOnBehalfOf','mapping':'$mapping',str(groupby):'$'+str(groupby)}, 'time':{'$min': '$startTime'}}},{'$sort':{'time':1}}]) 
             
         elif 'level' in kwargs and kwargs['level']=='iterations':
-            matchdic.update({'startTime':{'$gt':str(start)},'iterationIndex':{'$gte':int(kwargs['minidx']) ,'$lt':int(kwargs['maxidx'])}})
+            matchdic.update({'startTime':{'$lt':str(maxtime)},'iterationIndex':{'$gte':int(kwargs['minidx']) ,'$lt':int(kwargs['maxidx'])}})
             if start!=None:
-                matchdic.update({'startTime':{'$gt':str(start)}})
+                matchdic.update({'startTime':{'$lt':str(maxtime)}})
             matchdic=clean_empty(matchdic)
+            matchdic.update({'iterationId':{'$ne':None}})
             #print(matchdic)
-            obj=self.lineage.aggregate(pipeline=[{'$match':matchdic},{'$match':matchdic},{'$unwind': "$streams"},{'$group':{'_id':{'iterationId':'$iterationId','mapping':'$mapping',str(groupby):'$'+str(groupby)}, 'time':{'$min': '$startTime'}}},{'$sort':{'time':1}}])
+            obj=self.lineage.aggregate(pipeline=[{'$match':matchdic},{'$unwind': "$streams"},{'$group':{'_id':{'iterationId':'$iterationId','mapping':'$mapping',str(groupby):'$'+str(groupby)}, 'time':{'$min': '$startTime'}}},{'$sort':{'time':1}}])
         elif 'level' in kwargs and kwargs['level']=='instances':
             if maxtime!=None:
                 matchdic.update({'startTime':{'$lt':str(maxtime)}})
-            #print(matchdic)
+            print(matchdic)
             obj=self.lineage.aggregate(pipeline=[{'$match':matchdic},{'$unwind': "$streams"},{'$group':{'_id':{'instanceId':'$instanceId','mapping':'$mapping',str(groupby):'$'+str(groupby)}, 'time':{'$min': '$startTime'}}},{'$sort':{'time':1}}])
             
         elif 'level' in kwargs and (kwargs['level']=='vrange' or kwargs['level']=='data'):
@@ -1521,7 +1527,7 @@ class ProvenanceStore(object):
                 if 'level' in kwargs and kwargs['level']=='prospective':
                     pes=self.lineage.aggregate(pipeline=[{'$match':{'streams.id':{'$in':triggers}}},{'$unwind':'$streams'},{'$group':{'_id':{'actedOnBehalfOf':'$actedOnBehalfOf'},'size':{'$sum':'$streams.size'}}}])
                 elif 'level' in kwargs and kwargs['level']=='iterations':
-                    pes=self.lineage.aggregate(pipeline=[{'$match':{'streams.id':{'$in':triggers}}},{'$unwind':'$streams'},{'$group':{'_id':{'iterationId':'$iterationId'},'size':{'$sum':'$streams.size'}}}])
+                    pes=self.lineage.aggregate(pipeline=[{'$match':{'iterationId':{'$ne':None}, 'streams.id':{'$in':triggers}}},{'$unwind':'$streams'},{'$group':{'_id':{'iterationId':'$iterationId'},'size':{'$sum':'$streams.size'}}}])
                 elif 'level' in kwargs and kwargs['level']=='instances':
                     pes=self.lineage.aggregate(pipeline=[{'$match':{'streams.id':{'$in':triggers}}},{'$unwind':'$streams'},{'$group':{'_id':{'instanceId':'$instanceId'},'size':{'$sum':'$streams.size'}}}]) 
                 elif 'level' in kwargs and kwargs['level']=='vrange':
@@ -2067,7 +2073,7 @@ class ProvenanceStore(object):
                     change.update({"s-prov:ComponentInstance":{"@id":inst["_id"]}})
 
         x["@id"]=id
-        x["CName"]=id
+        x["s-prov:CName"]=id
         x["@type"]="s-prov:Component"
         x["prov:wasAssociateFor"]["prov:hadPlan"]={}
         x["prov:wasAssociateFor"]["prov:hadPlan"]["s-prov:source"]=x["source"][id]["code"]
@@ -2083,7 +2089,7 @@ class ProvenanceStore(object):
         self.addLDContext(x)
         return x
 
-    def getData(self,start,limit,impl=None,genBy=None,attrTo=None,keylist=None,maxvalues=None,minvalues=None,id=None,format=None,mode='OR'):
+    def getData(self,start,limit,impl=None,genBy=None,attrTo=None,keylist=None,maxvalues=None,minvalues=None,id=None,format=None,mode='OR',clusters=None):
         print('start getData--> start: ', start, ' limit: ', limit, ' genBy: ', genBy, 'format:',format,' attrTo: ', attrTo, ' keylist: ', keylist, ' maxvalues: ', maxvalues, ' minvalues: ', minvalues, ' id: ', id)
         # db = self.connection["verce-prov"]
         # lineage = self.db[ProvenanceStore.LINEAGE_COLLECTION]
@@ -2116,6 +2122,10 @@ class ProvenanceStore(object):
             if impl!=None:
                 activities=impl.split(',')
                 searchImplementations=[{'name':{'$in':activities}}]
+
+            if clusters!=None:
+                pclusters=clusters.split(',')
+                searchImplementations=[{'prov_cluster':{'$in':pclusters}}]
             
             # TODO format
 
@@ -2137,8 +2147,8 @@ class ProvenanceStore(object):
         return  output
         
 
-    def getWorkflowExecutionByLineage(self, start, limit, usernames, associatedWith, implementations, keylist, maxvalues, minvalues, mode = 'OR', types=None,formats = None):
-        print('usernames: ', usernames, 'implementations:', implementations,'keylist: ', keylist, 'maxvalues: ', maxvalues, 'minvalues: ', minvalues, 'mode: ', mode, 'format: ', formats)
+    def getWorkflowExecutionByLineage(self, start, limit, usernames, associatedWith, implementations, keylist, maxvalues, minvalues, mode = 'OR', types=None,formats = None,clusters=None):
+        print('usernames: ', usernames, 'implementations:', implementations,'keylist: ', keylist, 'maxvalues: ', maxvalues, 'minvalues: ', minvalues, 'mode: ', mode, 'format: ', formats, 'cluster: ', clusters)
         # lineage = self.db[ProvenanceStore.LINEAGE_COLLECTION]
         # workflow = self.db[ProvenanceStore.BUNDLE_COLLECTION]
         aggregateResults=None
@@ -2158,10 +2168,19 @@ class ProvenanceStore(object):
                 '$in': associatedWith
             }
 
-        if implementations is not None and len(implementations) > 0: 
+        
+
+        if implementations is not None and len(implementations) > 0:
+
             aggregate_match['name'] = {
-                '$in': implementations
-            }
+                    '$in': implementations
+                    }
+
+        if clusters is not None and len(clusters) > 0:
+
+            aggregate_match['prov_cluster'] = {
+                    '$in': clusters
+                    }
         
         
         if formats is not None and keylist == None:
@@ -2172,9 +2191,14 @@ class ProvenanceStore(object):
                     }
                 }
             }
+
+
+
         #print(aggregate_match)
+        key_value_pairs =[]
         if keylist is not None :
             key_value_pairs = helper.getKeyValuePairs(keylist, maxvalues, minvalues);
+            print(key_value_pairs)
             indexed_meta_query = helper.getIndexedMetaQueryList(key_value_pairs)
             parameters_query = helper.getParametersQueryList(key_value_pairs)
             aggregate_match['$or'] = indexed_meta_query + parameters_query
@@ -2189,23 +2213,31 @@ class ProvenanceStore(object):
                         }
                     }
                 }]
+
+            
+            
         # END: Build match
 
         # START: Find matching runIds
+            
         orlist=[]
         if mode == 'OR':
             for x in aggregate_match:
                 orlist.append({x:aggregate_match[x]})
             aggregate_pipeline =[
                 {
-                    '$match': aggregate_match
+                    '$match':  aggregate_match
                 },
                 {
                    '$group': {
                         '_id':'$runId'
                     }
-                }                                
+                }
+                
+
             ]
+
+            
             print('--- aggregate_pipeline  OR --->', aggregate_pipeline)
             aggregateResults = self.lineage.aggregate(pipeline = aggregate_pipeline)
 
@@ -2251,10 +2283,11 @@ class ProvenanceStore(object):
             ]
 
             if formats is not None:
-                aggregate_pipeline[3]['$group']['formats'] = {         
+                print aggregate_pipeline
+                aggregate_pipeline[4]['$group']['formats'] = {         
                     '$addToSet': "$streams.format"    
                 }
-                aggregate_pipeline[4]['$match']['$and'] += [{         
+                aggregate_pipeline[5]['$match']['$and'] += [{         
                     'formats': {
                         '$in': formats
                     }    
@@ -2354,6 +2387,9 @@ class ProvenanceStore(object):
                 searchDic,
                 {
                     "iterationId": 1,
+                    "prov_cluster":1,
+                    "actedOnBehalfOf":1,
+                    "name":1,
                     "runId":1,
                     "streams":1,
                     "parameters":1,
@@ -2385,6 +2421,12 @@ class ProvenanceStore(object):
                             stream['errors'] = lineage_item['errors']
                         if 'derivationIds' in lineage_item: 
                             stream['derivationIds'] = lineage_item['derivationIds']
+                        if 'prov_cluster' in lineage_item: 
+                            stream['cluster'] = lineage_item['prov_cluster']
+                        if 'actedOnBehalfOf' in lineage_item: 
+                            stream['component'] = lineage_item['actedOnBehalfOf']
+                        if 'name' in lineage_item: 
+                            stream['functionName'] = lineage_item['name']
                         
                         if format is not None: 
                             if stream['format'] == format:
@@ -2402,7 +2444,7 @@ class ProvenanceStore(object):
         else:
             
             key_value_pairs = helper.getKeyValuePairs(keylist, mxvaluelist, mnvaluelist)
-            indexed_meta_query = helper.getIndexedMetaQueryList(key_value_pairs, format)
+            indexed_meta_query = helper.getIndexedMetaQueryList(key_value_pairs, getSumm)
 
             if mode == 'OR': 
                 searchDic['$or'] = indexed_meta_query
@@ -2435,6 +2477,9 @@ class ProvenanceStore(object):
                 {
                     '$project': {
                         'format': '$streams.format',
+                        'cluster':'$prov_cluster',
+                        'component':'$actedOnBehalfOf',
+                        'functionName':'$name',
                         'annotations': '$streams.annotations',
                         'content': '$streams.content',
                         'location': '$streams.location',

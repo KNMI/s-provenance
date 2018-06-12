@@ -2,12 +2,12 @@
 <meta charset="utf-8">
 <style>
 
- 
- .my-legend .legend-title {
+  
+  .my-legend .legend-title {
     text-align: left;
     margin-bottom: 8px;
     font-weight: bold;
-    font-size: 120%;
+    font-size: 80%;
     
     }
   .my-legend .legend-scale ul {
@@ -22,7 +22,7 @@
     width: 50px;
     margin-bottom: 6px;
     text-align: center;
-    font-size: 80%;
+    font-size: 50%;
     list-style: none;
     }
   .my-legend ul.legend-labels li span {
@@ -30,10 +30,12 @@
     float: left;
     height: 15px;
     width: 50px;
+    font-size: 30px;
     }
-  .my-legend .legend-source {
-    font-size: 120%;
+  .legend-source {
+    font-size: 80%;
     clear: both;
+
     }
   .my-legend a {
     color: #777;
@@ -45,7 +47,7 @@
 }
 
  body{ text-align:center;
- 	   font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+     font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
  }
  
 .node:hover {
@@ -219,6 +221,7 @@ if (RAD_MODE=='data')
   
   nodes = cluster.nodes(packageHierarchyInstances(classes,RAD_GB));
   links = packageConnlistInstances(nodes);
+  showRadiants()
    
   	
   link = link
@@ -249,6 +252,7 @@ if (RAD_MODE=='data')
   
   nodes = cluster.nodes(packageHierarchyIterations(classes,RAD_GB));
   links = packageConnlistIterations(nodes);
+  showRadiants()
   
   link = link
       .data(bundle(links))
@@ -288,6 +292,7 @@ if (RAD_MODE=='data')
   
   nodes = cluster.nodes(packageHierarchyProspective(classes,RAD_GB));
   links = packageConnlistProspective(nodes);
+  showRadiants()
   link = link
       .data(bundle(links))
     .enter().append("path")
@@ -316,6 +321,7 @@ if (RAD_MODE=='data')
   
   nodes = cluster.nodes(packageHierarchyWorkers(classes));
   links = packageConnlistWorkers(nodes);
+  showRadiants()
   
   } 
   
@@ -323,6 +329,7 @@ if (RAD_MODE=='data')
   
   nodes = cluster.nodes(packageHierarchyPid(classes));
   links = packageConnlistPid(nodes);
+  showRadiants()
   
   } 
    
@@ -529,16 +536,18 @@ function packageHierarchyIterations(classes,gb) {
  return root
 }
 
-
+radiants=[]
 
 // Return a list of imports for the given array of nodes.
 function packageConnlistPEs(nodes) {
   var map = {},
       connlist = [];
-
+   
   // Compute a map from name to node.
   nodes.forEach(function(d) {
     map[d.name.runId] = d;
+    if (d.name.name!=undefined) 
+      radiants[radiants.length]=d.name.name
   });
 
   // For each import, construct a link from the source to target node.
@@ -588,12 +597,19 @@ function packageConnlistData(nodes) {
 function packageConnlistInstances(nodes) {
   var map = {},
       connlist = [];
+  
+   
 
   // Compute a map from name to node.
   nodes.forEach(function(d) {
     map[d.name.instanceId] = d;
+     
+    if (d.name.name!=undefined && !radiants.includes(d.name.name)){
+      radiants[radiants.length]=d.name.name
+      console.log(radiants)}
   });
 
+ 
   // For each import, construct a link from the source to target node.
   
   nodes.forEach(function(d) {
@@ -609,6 +625,7 @@ function packageConnlistInstances(nodes) {
 }
 
 
+
 function packageConnlistIterations(nodes) {
   var map = {},
       connlist = [];
@@ -616,6 +633,9 @@ function packageConnlistIterations(nodes) {
   // Compute a map from name to node.
   nodes.forEach(function(d) {
     map[d.name.iterationId] = d;
+     if (d.name.name!=undefined && !radiants.includes(d.name.name)){
+      radiants[radiants.length]=d.name.name
+      console.log(radiants)}
   });
 
   // For each import, construct a link from the source to target node.
@@ -639,6 +659,9 @@ function packageConnlistProspective(nodes) {
   // Compute a map from name to node.
   nodes.forEach(function(d) {
     map[d.name.actedOnBehalfOf] = d;
+     if (d.name.name!=undefined && !radiants.includes(d.name.name)){
+      radiants[radiants.length]=d.name.name
+      console.log(radiants)}
   });
 
   // For each import, construct a link from the source to target node.
@@ -708,24 +731,63 @@ function updateURLParameter(url, param, paramVal){
 function reload(par,sel){
   var myselect = document.getElementById(sel);
   url=window.location+""
+
   if (sel=='setrange'){
   	
   	url=updateURLParameter(url,'minidx',document.forms[0].minidx.value)
   	url=updateURLParameter(url,'maxidx',document.forms[0].maxidx.value)
-  	url=updateURLParameter(url,'mintime',document.forms[0].starttime.value)
+  	url=updateURLParameter(url,'maxtime',document.forms[0].maxtime.value)
   	window.location=url
   
   	}
-  	else
-  	
-  		window.location=updateURLParameter(url,par,myselect.value)
+  	 
+    if (sel=='selectLevel'){
+      if (myselect.value=='iterations'){
+
+        url=updateURLParameter(url,par,myselect.value)
+        url=updateURLParameter(url,'mintime',2010)
+        window.location=url
+      }
+      else
+        window.location=updateURLParameter(url,par,myselect.value)
+    }
+   
+    if (sel=='selectGroup'){     
+
+	   		window.location=updateURLParameter(url,par,myselect.value)
+    }
+  
+}
+
+function setmaxtime(par,sel){
+  var myselect = document.getElementById(sel);
+  url=window.location+""
+  if (sel=='submit'){
+    
+     
+    url=updateURLParameter(url,'maxtime',document.forms[0].maxtime.value)
+    window.location=url
+  
+    }
+    else
+    
+      window.location=updateURLParameter(url,par,myselect.value)
   
   
 }
 
+function showRadiants(){
+  //console.log(radiants)
+  for (var i = 0; i < radiants.length; i++) {
+              //console.log(radiants[i])
+              document.getElementById("radiantslist").innerHTML+="<span>"+radiants[i]+" </span>"
+              }
+}
 
 </script>
-<h2>Radial Provenance Analysis for '<%= request.getParameter("runId") %>' with tags '<%= request.getParameter("tags") %>'</h2>
+<h2>Radial Provenance Analysis for '<%= request.getParameter("runId") %>'
+  <br/>
+   <br/>
 <div class='my-legend'>
 <div class='legend-title'>Edges: Data Transfer (bytes)</div>
 <div class='legend-scale'>
@@ -769,39 +831,48 @@ function reload(par,sel){
   <option value="iterations">iterations</option>
 </select> 
 <form name="indexrange">
+  <br/>
 <% if (request.getParameter("level").equals("iterations")) { %>
-<strong>Iteration Range:</strong> 
+<div class='legend-source'>Iteration Range:<br/>
   minidx
   <input type="number" name="minidx" min="0" value="<%= request.getParameter("minidx") %>">
   maxidx
   <input type="number" name="maxidx" min="1" value="<%= request.getParameter("maxidx") %>">
-   start-time
-  <input type="string" name="starttime"  value="<%= request.getParameter("starttime") %>">
+   maxtime
+  <input type="string" name="maxtime"  value="<%= request.getParameter("maxtime") %>">
   
   <input type="button" name="setrange" value="change range" onclick="reload('','setrange')" />
+</div>
+<% 
+}
+%>
+<% if (request.getParameter("level").equals("instances")) { %>
+<div class='legend-source'>Max Time:</br>
+  
+ 
+  <input type="string" name="maxtime"  value="<%= request.getParameter("maxtime") %>">
+  <input type="button" name="submit" value="submit" onclick="setmaxtime('','submit')" />
+  
+ </div>   
 <% 
 }
 %>
 </form>
 <br/><br/>
 <div class='legend-source'>Grouping: <strong><%= request.getParameter("groupby") %></strong></div>
-
  <select onchange="reload('groupby','selectGroup')" id="selectGroup">
   <option value="xx">Select Grouping</option>
   <option value="pid">pid</option>
   <option value="worker">worker</option>
-  <option value="instanceId">instanceId</option>
-  <option value="actedOnBehalfOf">actedOnBehalfOf</option>
+  <option value="instanceId">ComponentInstance</option>
+  <option value="actedOnBehalfOf">Component</option>
   <option value="runId">runId</option>
-  <option value="name">name</option>
-  <option value="prov_cluster">prov_cluster</option>
+  <option value="name">functionName</option>
+  <option value="prov_cluster">cluster</option>
 </select> 
 <br/><br/>
-<div class='legend-source'>Tags: <strong><%= request.getParameter("tags") %></strong></div>
-
- <input type="text" id="mytags" placeholder="Insert tags..."/>
- <button type="button" onclick="reload('tags','mytags')">Go!</button>
 </div>
-<br/><br/>
+<div class='legend-source'>Radiants (Clockwise)</div>
+<div class='legend-source' id="radiantslist"/>
 </center>
 </body>
