@@ -1,39 +1,48 @@
-mongodb:
-  hosts:
-    ec2-18-197-219-251.eu-central-1.compute.amazonaws.com:
-      REMOTE_USER: "ec2-user"
-      NFS_OPTS: "nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2"
-      MONGO_DATA_MOUNTPOINT: "/data/mongodb"
-      NFS_IMPORTS:
-        - mount_dir: "{{ MONGO_DATA_MOUNTPOINT }}"
-          nfs_location: "fs-bba465e2.efs.eu-central-1.amazonaws.com:/"
+all:
+  vars:
+    PRIVATE_IP_STORE: 172.31.35.16
+    PORT_STORE: 80
+    PRIVATE_IP_VIEWER: 172.31.33.204
+    PORT_VIEWER: 8080
+  children:
+    mongodb:
+      hosts:
+        ec2-18-197-219-251.eu-central-1.compute.amazonaws.com:
+          REMOTE_USER: "ec2-user"
+          NFS_OPTS: "nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2"
+          MONGO_DATA_MOUNTPOINT: "/data/mongodb"
+          NFS_IMPORTS:
+            - mount_dir: "{{ MONGO_DATA_MOUNTPOINT }}"
+              nfs_location: "fs-bba465e2.efs.eu-central-1.amazonaws.com:/"
 
-      # Mongo docker image
-      MONGO_IMAGE_REGISTRY: "docker.io/"
-      MONGO_IMAGE_NAME: "mongo"
-      MONGO_IMAGE_TAG: "3.4.9"
+          # Mongo docker image
+          MONGO_IMAGE_REGISTRY: "docker.io/"
+          MONGO_IMAGE_NAME: "mongo"
+          MONGO_IMAGE_TAG: "3.4.9"
 
-store:
-  hosts:
-    ec2-18-197-219-251.eu-central-1.compute.amazonaws.com:
-      REMOTE_USER: "ec2-user"
+          RESTORE_DATABASE_DUMP: false # False by default, can be passed as extra variable via the commandline as described in the README.
 
-      # S-provenance store docker image
-      SPROV_STORE_IMAGE_REGISTRY: "docker.io/"
-      SPROV_STORE_IMAGE_NAME: "rdwdknmi/s-provenance-store"
-      SPROV_STORE_IMAGE_TAG: "latest" # TODO: Better tag than latest!
+    store:
+      hosts:
+        ec2-18-197-219-251.eu-central-1.compute.amazonaws.com:
+          REMOTE_USER: "ec2-user"
 
-viewer:
-  hosts:
-    ec2-18-195-126-28.eu-central-1.compute.amazonaws.com:
-      REMOTE_USER: "ec2-user"
+          # S-provenance store docker image
+          SPROV_STORE_IMAGE_REGISTRY: "docker.io/"
+          SPROV_STORE_IMAGE_NAME: "rdwdknmi/s-provenance-store"
+          SPROV_STORE_IMAGE_TAG: "latest" # TODO: Better tag than latest!
 
-      # Nginx docker image
-      NGINX_IMAGE_REGISTRY: "docker.io/"
-      NGINX_IMAGE_NAME: "nginx"
-      NGINX_IMAGE_TAG: "1.15"
+    viewer:
+      hosts:
+        ec2-18-195-126-28.eu-central-1.compute.amazonaws.com:
+          REMOTE_USER: "ec2-user"
 
-      # S-provenance viewer docker image
-      SPROV_VIEWER_IMAGE_REGISTRY: "docker.io/"
-      SPROV_VIEWER_IMAGE_NAME: "rdwdknmi/s-provenance-viewer"
-      SPROV_VIEWER_IMAGE_TAG: "latest" # TODO: Better tag than latest!
+          # Nginx docker image
+          NGINX_IMAGE_REGISTRY: "docker.io/"
+          NGINX_IMAGE_NAME: "nginx"
+          NGINX_IMAGE_TAG: "1.15"
+
+          # S-provenance viewer docker image
+          SPROV_VIEWER_IMAGE_REGISTRY: "docker.io/"
+          SPROV_VIEWER_IMAGE_NAME: "rdwdknmi/s-provenance-viewer"
+          SPROV_VIEWER_IMAGE_TAG: "latest" # TODO: Better tag than latest!

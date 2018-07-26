@@ -7,4 +7,4 @@
     detach: true
 #    env: TODO: Wellicht kunnen we hier de database env meegeven?
 #      EXTERNALADDRESS: "{{ ADAGUC_SERVER_EXTERNAL_ADDRESS }}"
-    published_ports: 80:8082
+    published_ports: "{{ PORT_STORE ~ ':8082' }}"

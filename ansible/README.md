@@ -44,6 +44,30 @@ It is possible to pass variables to ansible playbook via the command line:
 ansible-playbook release.yml --extra-vars '{"version":"1.23.45","other_variable":"foo"}'
 
 ```
+# Running the playbook
+First make sure that you have ssh access to the hosts.
+If this precondition is met, you have several options for running the ansible playbooks:
+
+1. **Run without restoring the test database:** 
+```
+ansible-playbook -i aws site.yml
+```
+
+2. **Run with restoring the test database (Note that this drops the current database):**
+```
+ansible-playbook -i aws site.yml --extra-vars '{"RESTORE_DATABASE_DUMP":true}' 
+```
+The testdatabase is a dump which contains data for the user 'aspinuso'. The dump can be found here: 
+https://s3.eu-central-1.amazonaws.com/eu-team-example-files/DARE/S-Provenance/test-provdb.gz
+Note that small AWS instances might run out of memory when restoring the database. 
+If this is the case, it temporarily needs to be upgraded to an instance with more memory available.
+
+
+3. **Running specific tasks by using tags:**
+```
+ansible-playbook -t viewer -i aws site.yml
+```
+This allows you to only deploy parts of the system. The tags can be found inside the playbooks.
 
 # Points for the real README.md
 * Mention that you need to have ssh access!
@@ -82,9 +106,14 @@ Source: https://docs.mongodb.com/manual/administration/production-notes/#kernel-
 
 Note that the specified MongoDb image indeed uses the WiredTiger storage engine.
 
-### Loadbalancer
-
 ### AWS instance size
 
 ### Separating instances
-Viewer separate from others, communication internally. Data.xml
+Viewer separate from others, communication internally. Issues with proxy.
+
+TODO: Incorporate into readme/confluence:
+* Changing database export requires a lot of unecessary steps to be redone
+* Downloading code from github instead of usning local code --> image vs dockerfile
+* Option to point to a database hosted somewhere else --> Now baked into image
+* Option to point to a backend somewhere else --> Now baked into image, using prebuilt war
+* docker logs

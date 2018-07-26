@@ -9,18 +9,19 @@
     volumes: 
       - "{{ MONGO_DATA_MOUNTPOINT }}:/data/db"
 
-
-- name: Wait for mongo-db container
+- name: "Test"
   pause:
-    seconds: 10
+    prompt: "Are you sure you also want to drop and restore the database (yes/no)?"
+  register: user_confirmation
+  when: RESTORE_DATABASE_DUMP
 
-# TODO: Only extract db when necessary
-# TODO: Add prompt saying that you are indeed sure that you want to restore the backupl.
 - name: Retrieve testdatabase from S3 bucket
   get_url:
     url: https://s3.eu-central-1.amazonaws.com/eu-team-example-files/DARE/S-Provenance/test-provdb.gz
     dest: "{{ MONGO_DATA_MOUNTPOINT }}/test-provdb.gz"
+  when: user_confirmation.user_input | bool
 
-- name: Restore the testdatabase
-  command: "{{ 'docker exec -i ' + mongodb_container_name + ' mongorestore --gzip --archive=/data/db/test-provdb.gz' }}"
+- name: Restore the testdatabase dump (drops the current documents)
+  command: "{{ 'docker exec -i ' + mongodb_container_name + ' mongorestore --drop --gzip --archive=/data/db/test-provdb.gz' }}"
+  when: user_confirmation.user_input | bool
 

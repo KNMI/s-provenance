@@ -66,6 +66,9 @@ Once the containers are up and running the following endpoints will be exposed:
 - API: http://127.0.0.1:8082/swagger/
 - Viewer: http://127.0.0.1:9000/sprovflow-viewer/html/view.jsp
 
+#### Deployment on AWS
+Currently the service is deployed on AWS.
+
 
 ## Requirements and dependencies
 
