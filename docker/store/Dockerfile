@@ -4,6 +4,7 @@ FROM ubuntu
 LABEL description="KNMI PROVENANCE STORE CONTAINER"
 
 ENV SPROV_DB=sprov-db
+ENV SPROV_DB=verce-prov
 
 
 RUN mkdir -p /prov/

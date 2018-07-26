@@ -1,0 +1,26 @@
+---
+- name: Start MongoDB docker container
+  docker_container:
+    name: "{{ mongodb_container_name }}"
+    image: "{{ MONGO_IMAGE_REGISTRY }}{{ MONGO_IMAGE_NAME }}:{{ MONGO_IMAGE_TAG }}"
+    restart_policy: always
+    detach: true
+    published_ports: 27017:27017
+    volumes: 
+      - "{{ MONGO_DATA_MOUNTPOINT }}:/data/db"
+
+
+- name: Wait for mongo-db container
+  pause:
+    seconds: 10
+
+# TODO: Only extract db when necessary
+# TODO: Add prompt saying that you are indeed sure that you want to restore the backupl.
+- name: Retrieve testdatabase from S3 bucket
+  get_url:
+    url: https://s3.eu-central-1.amazonaws.com/eu-team-example-files/DARE/S-Provenance/test-provdb.gz
+    dest: "{{ MONGO_DATA_MOUNTPOINT }}/test-provdb.gz"
+
+- name: Restore the testdatabase
+  command: "{{ 'docker exec -i ' + mongodb_container_name + ' mongorestore --gzip --archive=/data/db/test-provdb.gz' }}"
+

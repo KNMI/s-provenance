@@ -1,0 +1,25 @@
+---
+- name: SPROV-Flow Viewer
+  tags:
+    - viewer
+  hosts:
+    - viewer
+  remote_user: "{{ REMOTE_USER }}"
+  become_method: sudo
+  become: true
+  roles:
+    - { role: roles/docker/install }
+    - { role: roles/docker/image,
+        IMAGE_REGISTRY: "{{ NGINX_IMAGE_REGISTRY }}",
+        IMAGE_NAME: "{{ NGINX_IMAGE_NAME }}",
+        IMAGE_TAG: "{{NGINX_IMAGE_TAG }}"
+      }
+    - { role: roles/docker/image,
+        IMAGE_REGISTRY: "{{ SPROV_VIEWER_IMAGE_REGISTRY }}",
+        IMAGE_NAME: "{{ SPROV_VIEWER_IMAGE_NAME }}",
+        IMAGE_TAG: "{{ SPROV_VIEWER_IMAGE_TAG }}"
+      }
+    - { role: roles/viewer }
+
+
+

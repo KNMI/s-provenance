@@ -44,6 +44,8 @@ We consider two classes of usage, respectively addressing details of a single co
 
 #### Dockerization
 
+TODO: Discuss option to build locally and to pull from registry.
+
 The s-prov project can be deployed using docker technology. The project is split into a store and viewer instances.  The viewer is currently set to connect via the docker bridge to a local instance of the store. Changes to the docker file are required if the viewer is remote.
 The store instance is deployable via docker-compose, the mongo db instance is split from the store services api. The store service can also be deployed independently so as to be attached to an existing mongo db. 
 

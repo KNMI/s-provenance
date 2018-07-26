@@ -1,0 +1,5 @@
+---
+docker_packages: [ 'docker' ]
+docker_py_pip_packages: [ 'docker-py' ]        
+        
+    

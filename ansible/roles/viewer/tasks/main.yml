@@ -1,0 +1,26 @@
+---
+- name: Create a directory for the config
+  file: path=/data/config state=directory mode=777
+
+- name: Copy config
+  copy:
+    src: nginx.conf
+    dest: /data/config/nginx.conf
+
+- name: Start the Nginx proxy
+  docker_container:
+    name: "nginx"
+    image: "{{ NGINX_IMAGE_REGISTRY }}{{ NGINX_IMAGE_NAME }}:{{ NGINX_IMAGE_TAG }}"
+    restart_policy: always
+    detach: true
+    published_ports: 80:80
+    volumes:
+    - /data/config/nginx.conf:/etc/nginx/conf.d/default.conf
+
+- name: Start s-provenance viewer docker container
+  docker_container:
+    name: "viewer"
+    image: "{{ SPROV_VIEWER_IMAGE_REGISTRY }}{{ SPROV_VIEWER_IMAGE_NAME }}:{{ SPROV_VIEWER_IMAGE_TAG }}"
+    restart_policy: always
+    detach: true
+    published_ports: 8080:8080

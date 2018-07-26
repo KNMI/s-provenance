@@ -1,0 +1,10 @@
+---
+- name: Start s-provenance store docker container
+  docker_container:
+    name: "sprov"
+    image: "{{ SPROV_STORE_IMAGE_REGISTRY }}{{ SPROV_STORE_IMAGE_NAME }}:{{ SPROV_STORE_IMAGE_TAG }}"
+    restart_policy: always
+    detach: true
+#    env: TODO: Wellicht kunnen we hier de database env meegeven?
+#      EXTERNALADDRESS: "{{ ADAGUC_SERVER_EXTERNAL_ADDRESS }}"
+    published_ports: 80:8082

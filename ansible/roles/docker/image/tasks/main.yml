@@ -1,0 +1,16 @@
+---
+- name: Login to registry
+  docker_login:
+    registry_url: "{{ IMAGE_REGISTRY }}"
+    username: "{{ IMAGE_REGISTRY_USER }}"
+    password: "{{ IMAGE_REGISTRY_PASSWORD }}"
+  when: IMAGE_REGISTRY_USER is defined and IMAGE_REGISTRY_PASSWORD is defined
+- name: "Get Docker image {{ IMAGE_REGISTRY }}{{ IMAGE_NAME }}:{{ IMAGE_TAG }}"
+  docker_image:
+    name: "{{ IMAGE_REGISTRY }}{{ IMAGE_NAME }}"
+    tag: "{{ IMAGE_TAG }}"
+    force: yes             # state absent --> un-tage and remove images  state=present --> load even when image exists 
+- name: Logout from Docker registry
+  docker_login:
+    state: absent
+  when: IMAGE_REGISTRY_USER is defined and IMAGE_REGISTRY_PASSWORD is defined
