@@ -1,4 +1,0 @@
----
-- name: Create {{ NETWORK_NETWORK_NAME }} Docker network
-  docker_network:
-    name: "{{ NETWORK_NETWORK_NAME }}"
