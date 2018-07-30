@@ -51,9 +51,9 @@ The store instance is deployable via docker-compose, the mongo db instance is sp
 
 
 s-prov store,
-  see **docker/store/docker-compose.yml**
+  see **provenance-api/docker-compose.yml**
 ```
-  $ cd docker/store/
+  $ cd provenance-api
   $ docker-compose up --build 
 ```
 s-prov viewer
