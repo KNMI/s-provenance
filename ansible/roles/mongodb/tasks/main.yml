@@ -5,11 +5,11 @@
     image: "{{ MONGO_IMAGE_REGISTRY }}{{ MONGO_IMAGE_NAME }}:{{ MONGO_IMAGE_TAG }}"
     restart_policy: always
     detach: true
-    published_ports: 27017:27017
+    published_ports: "{{ PORT_MONGODB ~ ':27017' }}"
     volumes: 
       - "{{ MONGO_DATA_MOUNTPOINT }}:/data/db"
 
-- name: "Test"
+- name: "Confirm database restore."
   pause:
     prompt: "Are you sure you also want to drop and restore the database (yes/no)?"
   register: user_confirmation
@@ -17,11 +17,11 @@
 
 - name: Retrieve testdatabase from S3 bucket
   get_url:
-    url: https://s3.eu-central-1.amazonaws.com/eu-team-example-files/DARE/S-Provenance/test-provdb.gz
+    url: "{{ mongodb_backup_download_url }}"
     dest: "{{ MONGO_DATA_MOUNTPOINT }}/test-provdb.gz"
-  when: user_confirmation.user_input | bool
+  when: user_confirmation.user_input is defined and user_confirmation.user_input | bool
 
 - name: Restore the testdatabase dump (drops the current documents)
   command: "{{ 'docker exec -i ' + mongodb_container_name + ' mongorestore --drop --gzip --archive=/data/db/test-provdb.gz' }}"
-  when: user_confirmation.user_input | bool
+  when: user_confirmation.user_input is defined and user_confirmation.user_input | bool
 

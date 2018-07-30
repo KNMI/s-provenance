@@ -3,8 +3,11 @@
   docker_container:
     name: "sprov"
     image: "{{ SPROV_STORE_IMAGE_REGISTRY }}{{ SPROV_STORE_IMAGE_NAME }}:{{ SPROV_STORE_IMAGE_TAG }}"
+    restart: yes
     restart_policy: always
     detach: true
-#    env: TODO: Wellicht kunnen we hier de database env meegeven?
-#      EXTERNALADDRESS: "{{ ADAGUC_SERVER_EXTERNAL_ADDRESS }}"
+    env:
+      SPROV_DB="{{ mongodb_name }}"
+      SPROV_DB_HOST="{{ PRIVATE_IP_MONGODB }}"
+      SPROV_DB_PORT="{{ PORT_MONGODB }}"
     published_ports: "{{ PORT_STORE ~ ':8082' }}"

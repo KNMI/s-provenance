@@ -4,6 +4,8 @@ all:
     PORT_STORE: 80
     PRIVATE_IP_VIEWER: 172.31.33.204
     PORT_VIEWER: 8080
+    PRIVATE_IP_MONGODB: 172.31.35.16
+    PORT_MONGODB: 27017
   children:
     mongodb:
       hosts:
@@ -30,7 +32,7 @@ all:
           # S-provenance store docker image
           SPROV_STORE_IMAGE_REGISTRY: "docker.io/"
           SPROV_STORE_IMAGE_NAME: "rdwdknmi/s-provenance-store"
-          SPROV_STORE_IMAGE_TAG: "latest" # TODO: Better tag than latest!
+          SPROV_STORE_IMAGE_TAG: "2ba913fd89ea635811b25ab8546eceaf34c2f11a"
 
     viewer:
       hosts:
