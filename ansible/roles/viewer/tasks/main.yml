@@ -41,6 +41,7 @@
   docker_container:
     name: "viewer"
     image: "{{ SPROV_VIEWER_IMAGE_REGISTRY }}{{ SPROV_VIEWER_IMAGE_NAME }}:{{ SPROV_VIEWER_IMAGE_TAG }}"
+    restart: yes
     restart_policy: always
     detach: true
     published_ports: "{{ PORT_VIEWER ~ ':8080' }}"

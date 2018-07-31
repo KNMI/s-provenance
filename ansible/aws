@@ -47,4 +47,4 @@ all:
           # S-provenance viewer docker image
           SPROV_VIEWER_IMAGE_REGISTRY: "docker.io/"
           SPROV_VIEWER_IMAGE_NAME: "rdwdknmi/s-provenance-viewer"
-          SPROV_VIEWER_IMAGE_TAG: "latest" # TODO: Better tag than latest!
+          SPROV_VIEWER_IMAGE_TAG: "3037a4dbdb573812929522239721128be2004bc2"
