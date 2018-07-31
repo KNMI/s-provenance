@@ -43,20 +43,17 @@ We consider two classes of usage, respectively addressing details of a single co
 
 
 #### Dockerization
-
-TODO: Discuss option to build locally and to pull from registry.
-
 The s-prov project can be deployed using docker technology. The project is split into a store and viewer instances.  The viewer is currently set to connect via the docker bridge to a local instance of the store. Changes to the docker file are required if the viewer is remote.
 The store instance is deployable via docker-compose, the mongo db instance is split from the store services api. The store service can also be deployed independently so as to be attached to an existing mongo db. 
 
-
-s-prov store,
-  see **provenance-api/docker-compose.yml**
+##### s-prov store 
+See **provenance-api/docker-compose.yml**
 ```
   $ cd provenance-api
   $ docker-compose up --build 
 ```
-s-prov viewer
+
+##### s-prov viewer
 ```
    $ docker build sprovflow-viewer/ -t viewer 
    $ docker run -it -p9000:8080 viewer 
@@ -66,9 +63,9 @@ Once the containers are up and running the following endpoints will be exposed:
 - API: http://127.0.0.1:8082/swagger/
 - Viewer: http://127.0.0.1:9000/sprovflow-viewer/html/view.jsp
 
-#### Deployment on AWS
-Currently the service is deployed on AWS.
-
+##### Deployment of containers on AWS via Ansible
+The docker images are currently deployed on AWS via ansible.
+For more information, see **ansible/README.md**
 
 ## Requirements and dependencies
 
