@@ -58,7 +58,7 @@ s-prov store,
 ```
 s-prov viewer
 ```
-   $ docker build docker/viewer/ -t viewer 
+   $ docker build sprovflow-viewer/ -t viewer 
    $ docker run -it -p9000:8080 viewer 
 ```   
 
