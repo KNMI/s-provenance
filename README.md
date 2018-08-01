@@ -63,9 +63,30 @@ Once the containers are up and running the following endpoints will be exposed:
 - API: http://127.0.0.1:8082/swagger/
 - Viewer: http://127.0.0.1:9000/sprovflow-viewer/html/view.jsp
 
+##### Docker image registry
+Recent builds of the images are hosted on docker hub: https://hub.docker.com/search/?isAutomated=0&isOfficial=0&page=1&pullCount=0&q=rdwdknmi&starCount=0
+These are publicly available and can be used if you do not want to build your own image.
+
+###### Pushing a new version of the images
+First, ask rights to push to the registry. Also make sure that your image is named correctly.
+This can be done via the following command:
+```
+docker image tag <name_of_original_image>:<tag> rdwdknmi/s-provenance-store:<commit-hash>
+docker image tag <name_of_original_image>:<tag> rdwdknmi/s-provenance-viewer:<commit-hash>
+```
+We use the commit hash as a tag such that it is always possible to trace-back which version of the code the docker image is based on.
+
+Use the following command to push the images:
+```
+docker login (enter your docker hub userid and password)
+docker push rdwdknmi/s-provenance-store:<tag>
+docker push rdwdknmi/s-provenance-viewer:<tag>
+```
+
 ##### Deployment of containers on AWS via Ansible
 The docker images are currently deployed on AWS via ansible.
-For more information, see **ansible/README.md**
+This code is hosted in a private repository: https://gitlab.com/KNMI/EU-Team/s-provenance/ansible
+Access to this code and the online service can be requested.
 
 ## Requirements and dependencies
 

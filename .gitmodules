@@ -1,3 +1,0 @@
-[submodule "ansible/roles/generic-roles"]
-	path = ansible/roles/generic-roles
-	url = https://gitlab.com/KNMI/ansible-roles.git

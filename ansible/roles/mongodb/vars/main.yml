@@ -1,3 +1,0 @@
----
-mongodb_container_name: "mongo-db"
-mongodb_backup_download_url: "https://s3.eu-central-1.amazonaws.com/eu-team-example-files/DARE/S-Provenance/test-provdb.gz"

@@ -1,3 +1,0 @@
----
-nginx_config_path: "/data/config/nginx.conf"
-nginx_config_path_in_docker: "/etc/nginx/conf.d/default.conf"

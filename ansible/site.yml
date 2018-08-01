@@ -1,7 +1,0 @@
----
-- import_playbook: mongodb.yml
-- import_playbook: store.yml
-- import_playbook: viewer.yml
-
-
-
