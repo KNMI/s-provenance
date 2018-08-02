@@ -10,9 +10,13 @@ services:
       # mongod --logpath /prov/mongo.log --dbpath /prov/data/
         command: mongod --dbpath /data/db # --quiet
     sprov:
-        build: ../store/
+        build: ../provenance-api/
         container_name: "sprov"
         image: sprov:latest
+        environment:
+            - SPROV_DB=sprov-db
+            - SPROV_DB_HOST=172.17.0.1
+            - SPROV_DB_PORT=27017
         ports:
           - 8082:8082
         links:
@@ -25,7 +29,7 @@ services:
         container_name: "viewer"
         image: explorer:latest
         ports:
-          - 9000:8082
+          - 9000:8080
         links:
           - sprov
         depends_on:
