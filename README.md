@@ -90,12 +90,12 @@ Access to this code and the online service can be requested.
 
 ## Requirements and dependencies
 
-### provenance-explorer
+### sprovflow-viewer
 - Compile, Maven2 >= v3.2.5
 - Apache Tomcat >= v7.x
 - Java proxy j2ep v1.0
  
-### provenance-api
+### sprovflow-api
 - gunicorn >= 19.7.1 (or any WSGI webserver)
 - flask >= v0.12.1
 - pymongo >= v3.4.0
