@@ -43,20 +43,19 @@ We consider two classes of usage, respectively addressing details of a single co
 
 
 #### Dockerization
-
 The s-prov project can be deployed using docker technology. The project is split into a store and viewer instances.  The viewer is currently set to connect via the docker bridge to a local instance of the store. Changes to the docker file are required if the viewer is remote.
 The store instance is deployable via docker-compose, the mongo db instance is split from the store services api. The store service can also be deployed independently so as to be attached to an existing mongo db. 
 
-
-s-prov store,
-  see **docker/store/docker-compose.yml**
+##### s-prov store 
+See **provenance-api/docker-compose.yml**
 ```
-  $ cd docker/store/
+  $ cd provenance-api
   $ docker-compose up --build 
 ```
-s-prov viewer
+
+##### s-prov viewer
 ```
-   $ docker build docker/viewer/ -t viewer 
+   $ docker build sprovflow-viewer/ -t viewer 
    $ docker run -it -p9000:8080 viewer 
 ```   
 
@@ -64,15 +63,39 @@ Once the containers are up and running the following endpoints will be exposed:
 - API: http://127.0.0.1:8082/swagger/
 - Viewer: http://127.0.0.1:9000/sprovflow-viewer/html/view.jsp
 
+##### Docker image registry
+Recent builds of the images are hosted on docker hub: https://hub.docker.com/search/?isAutomated=0&isOfficial=0&page=1&pullCount=0&q=rdwdknmi&starCount=0
+These are publicly available and can be used if you do not want to build your own image.
+
+###### Pushing a new version of the images
+First, ask rights to push to the registry. Also make sure that your image is named correctly.
+This can be done via the following command:
+```
+docker image tag <name_of_original_image>:<tag> rdwdknmi/s-provenance-store:<commit-hash>
+docker image tag <name_of_original_image>:<tag> rdwdknmi/s-provenance-viewer:<commit-hash>
+```
+We use the commit hash as a tag such that it is always possible to trace-back which version of the code the docker image is based on.
+
+Use the following command to push the images:
+```
+docker login (enter your docker hub userid and password)
+docker push rdwdknmi/s-provenance-store:<tag>
+docker push rdwdknmi/s-provenance-viewer:<tag>
+```
+
+##### Deployment of containers on AWS via Ansible
+The docker images are currently deployed on AWS via ansible.
+This code is hosted in a private repository: https://gitlab.com/KNMI/EU-Team/s-provenance/ansible
+Access to this code and the online service can be requested.
 
 ## Requirements and dependencies
 
-### provenance-explorer
+### sprovflow-viewer
 - Compile, Maven2 >= v3.2.5
 - Apache Tomcat >= v7.x
 - Java proxy j2ep v1.0
  
-### provenance-api
+### sprovflow-api
 - gunicorn >= 19.7.1 (or any WSGI webserver)
 - flask >= v0.12.1
 - pymongo >= v3.4.0
